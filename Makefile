@@ -2,19 +2,19 @@
 # run make `help`
 
 ##@ Dependencies
-OUTPUT_DIR = dist/
-SRC = cf.py
+BUILD_DIR = dist/
+SRC = cf.py requirements.txt pyproject.toml
 
 build: $(SRC)
 	pip install build
-	python -m build --wheel --outdir $(OUTPUT_DIR) .
+	python -m build --wheel --outdir $(BUILD_DIR) .
 
-install: $(OUTPUT_DIR)
-	echo 'Y ' | python -m pip uninstall $(OUTPUT_DIR)/*.whl
-	python -m pip install $(OUTPUT_DIR)/*.whl
+install: $(BUILD_DIR)
+	echo 'Y ' | python -m pip uninstall $(BUILD_DIR)/*.whl
+	python -m pip install $(BUILD_DIR)/*.whl
 
 clean:
-	rm -rf $(OUTPUT_DIR)
+	rm -rf $(BUILD_DIR)
 	rm -rf build/
 	rm -rf cf_vlma.egg-info
 
