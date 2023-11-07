@@ -7,11 +7,17 @@ To avoid sending solution failing pre-tests :P.
 
 import sys
 import argparse
+from os import path
+from pathlib import Path
 import difflib
 import requests
 import subprocess
 from wasabi import color
 from bs4 import BeautifulSoup
+
+import logging
+
+LOG= logging.getLogger(__name__)
 
 def diff_strings(a: str, b: str):
     """
@@ -57,13 +63,17 @@ def get_test_cases(problem: str, contest: str) -> list[tuple[str, str]]:
         tuple[str, str]: The input and output test cases.
     """
     problem_url = f"https://codeforces.com/contest/{contest}/problem/{problem}"
+    LOG.warning("Getting test cases for %s", problem_url)
     # Get the problem page
     page = requests.get(problem_url, timeout=3)
     # Parse the page
     soup = BeautifulSoup(page.content, "html.parser")
     # Get the sample tests
-    sample_test_inputs = soup.find("div", class_="sample-test").findAll("div", class_="input")
-    sample_test_outputs = soup.find("div", class_="sample-test").findAll("div", class_="output")
+    sample_tests = soup.find("div", class_="sample-test")
+    assert sample_tests, "Sample tests not found!"
+    sample_test_inputs = sample_tests.findAll("div", class_="input")
+    sample_test_outputs = sample_tests.findAll("div", class_="output")
+    assert sample_test_outputs, "Sample tests not found!"
     # Get the sample inputs
     sample_inputs = [div_input.find("pre").get_text(separator="\n").strip("\n") for div_input in sample_test_inputs]
     # Get the sample outputs
@@ -102,21 +112,52 @@ def test(executable: str, cases: list[tuple[str, str]], print_diff=True) -> bool
             tests_passing = False
     return tests_passing
 
+def infer_problem(src: str) -> str:
+    """
+    Infers the problem id from the source file path.
+
+    Args:
+        src (str): The path to the source file.
+    Returns:
+        str: The problem id.
+    """
+    # Expand the path
+    srcpath = Path(src).absolute()
+    # Get the problem id from the filename
+    return srcpath.stem
+
+def infer_contest(src: str) -> str:
+    """
+    Infers the contest number from the source file path.
+
+    Args:
+        src (str): The path to the source file.
+    Returns:
+        str: The contest number.
+    """
+    # Expand to get the absolute path
+    srcpath = Path(src).absolute()
+    print(srcpath, srcpath.parent, srcpath.parent.parent)
+    # Path must be <contest_number>/<problem_id>.cpp
+    return str(srcpath.parent.stem)
+
 
 if __name__ == '__main__':
     # Parse the problem name from the CLI argument
-    parser = argparse.ArgumentParser(description="Codeforces CLI tool to test and submit solutions")
-    parser.add_argument("--problem", required=True, help="The problem id, e.g. A, B, C1")
-    parser.add_argument("--contest", required=False, help="The contest number, e.g. 1890. If not given looks for codeforces/<contest_number> in the pwd.")
-    parser.add_argument("src", help="The source file to test/submit")
+    parser = argparse.ArgumentParser(description="Codeforces CLI tool to run pre-tests on Codeforces problems.")
+    parser.add_argument("--problem", required=False, help="The problem id, e.g. A, B, C1. If not given infers from src positional argument.")
+    parser.add_argument("--contest", required=False, help="The contest number, e.g. 1890. If not given infers from the parent of the src positional argument.")
+    parser.add_argument("src", help="The path to the solution source file to run pre-tests.")
     args = parser.parse_args()
 
-    executable_name = args.problem
+    problem = args.problem or infer_problem(args.src)
+    contest = args.contest or infer_contest(args.src)
+    assert all([problem, contest]), "Problem and contest not given and could not be inferred from src positional argument."
+    executable_name = problem
 
     compile_cpp(args.src, executable_name)
     # Get the test cases
-    cases = get_test_cases(args.problem, args.contest)
-    from os import path
+    cases = get_test_cases(problem, contest)
     assert path.isfile(executable_name), f"Executable {executable_name} not found!"
     if test(executable_name, cases):
         print(f'{color(f"All {len(cases)} pre-tests passed", fg=16, bg="green")}  🚀')

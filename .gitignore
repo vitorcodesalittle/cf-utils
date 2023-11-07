@@ -3,5 +3,8 @@ tests/B
 tests/C
 tests/D
 tests/E
+build/
+dist/
+*.egg-info
 __pycache__/
 .venv/

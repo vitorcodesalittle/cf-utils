@@ -1,0 +1,17 @@
+[project]
+name = "cf_vlma"
+version = "0.0.1"
+authors = [
+  { name="Vilma", email="vitormaia1890@gmail.com" },
+]
+description = "Personal utilities to feel better doing cf contests"
+# readme = "README.md"
+requires-python = ">=3.7"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
