@@ -49,7 +49,7 @@ def compile_cpp(src_path: str, exec_path: str, gpp_options=""):
         exec_path (str): The executable path.
         gpp_options (str): Extra options to pass to g++.
     """
-    subprocess.run(["g++", src_path, "-o", exec_path])
+    subprocess.run(["g++", src_path, "-o", exec_path], check=True)
 
 
 def get_test_cases(problem: str, contest: str) -> list[tuple[str, str]]:
