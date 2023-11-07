@@ -1,0 +1,7 @@
+tests/A
+tests/B
+tests/C
+tests/D
+tests/E
+__pycache__/
+.venv/
